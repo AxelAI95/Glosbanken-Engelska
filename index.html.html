@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Glosbanken</title>
+<style>
+:root{
+  --bg:#f5f7fb;--panel:#fff;--ink:#172033;--muted:#64748b;--line:#dce4ef;
+  --accent:#3659d9;--accent2:#6f83e8;--good:#16844a;--bad:#b42318;
+  --shadow:0 14px 38px rgba(15,23,42,.08);--radius:20px
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);
+background:linear-gradient(180deg,#edf2ff 0,#f8fafc 330px,var(--bg) 100%);min-height:100vh}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.wrap{max-width:1100px;margin:auto;padding:34px 20px 70px}
+.hero{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:24px}
+h1{margin:0;font-size:clamp(34px,5vw,50px);letter-spacing:-.045em}
+.hero p{margin:8px 0 0;color:var(--muted);font-size:17px}
+.badge{background:white;border:1px solid var(--line);border-radius:999px;padding:9px 13px;font-size:13px;color:var(--muted);box-shadow:0 3px 14px rgba(15,23,42,.04)}
+.tabs,.mode-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.tab,.mode,.secondary,.primary{border-radius:999px;padding:10px 16px;font-weight:800;transition:.15s}
+.tab,.mode,.secondary{background:#fff;border:1px solid var(--line);color:#334155}
+.tab.active,.mode.active,.primary{background:var(--accent);border:1px solid var(--accent);color:#fff;box-shadow:0 7px 18px rgba(54,89,217,.18)}
+.tab:hover,.mode:hover,.secondary:hover,.primary:hover{transform:translateY(-1px)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px}
+.topline{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.topline h2{font-size:28px;margin:0}
+.meta{color:var(--muted);font-weight:650;margin-top:3px}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+.week-picker{display:flex;align-items:center;gap:8px;background:#f3f6ff;border:1px solid #cbd5ff;border-radius:12px;padding:7px 10px;color:#334155;font-weight:800}
+.week-picker select{border:0;background:transparent;color:var(--accent);font-weight:900;outline:none;cursor:pointer}
+.search{border:1px solid var(--line);border-radius:12px;padding:10px 13px;width:min(300px,100%);outline:none}
+.search:focus,input[type=text]:focus{border-color:#91a7ff;box-shadow:0 0 0 3px rgba(54,89,217,.1)}
+.view{display:none}.view.active{display:block}
+.word-list{display:grid;gap:8px}
+.word-row{display:grid;grid-template-columns:1fr 1fr;gap:18px;border:1px solid #e6edf5;border-radius:12px;padding:12px 15px}
+.word-row:nth-child(even){background:#fafcff}
+.word-row strong{font-size:16px}.word-row span{color:#475569}
+.empty,.errorbox{padding:42px 18px;text-align:center;border:2px dashed var(--line);border-radius:15px;color:var(--muted);background:#fbfdff;line-height:1.5}
+.errorbox{color:var(--bad);border-color:#fecaca;background:#fff8f8}
+.flash-toolbar,.quiz-toolbar{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.flashcard{min-height:315px;border-radius:24px;background:linear-gradient(145deg,var(--accent),var(--accent2));color:#fff;
+display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;box-shadow:0 18px 45px rgba(54,89,217,.23);user-select:none}
+.flash-label{font-size:13px;text-transform:uppercase;letter-spacing:.13em;opacity:.8;margin-bottom:12px}
+.flash-word{font-size:clamp(36px,7vw,64px);font-weight:900;letter-spacing:-.04em}
+.flash-hint{font-size:14px;opacity:.82;margin-top:18px}
+.flash-nav{display:flex;justify-content:center;gap:10px;margin-top:16px}.flash-nav button{min-width:120px}
+.quiz-box{max-width:720px;margin:auto;text-align:center;padding:24px 8px}
+.quiz-direction{font-size:14px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.quiz-prompt{font-size:clamp(32px,6vw,54px);font-weight:900;letter-spacing:-.04em;margin:14px 0 22px}
+.quiz-answer{width:100%;border:2px solid var(--line);border-radius:14px;padding:14px 16px;font-size:20px;text-align:center;outline:none}
+.quiz-buttons{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:13px}
+.feedback{min-height:34px;margin-top:15px;font-weight:850}.good{color:var(--good)}.bad{color:var(--bad)}
+.score{font-weight:850}
+.loading{display:inline-flex;align-items:center;gap:7px}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;animation:pulse 1s infinite alternate}.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes pulse{to{opacity:.25}}
+footer{text-align:center;color:var(--muted);font-size:13px;margin-top:24px}
+.toast{position:fixed;right:18px;bottom:18px;background:#172033;color:#fff;padding:12px 15px;border-radius:12px;box-shadow:0 12px 30px rgba(15,23,42,.22);opacity:0;transform:translateY(10px);transition:.2s;pointer-events:none;z-index:30;max-width:380px}
+.toast.show{opacity:1;transform:none}
+@media(max-width:760px){.hero{flex-direction:column}.word-row{grid-template-columns:1fr;gap:3px}.panel{padding:18px}.flashcard{min-height:250px}.tools{width:100%}.week-picker,.search{width:100%}.week-picker{justify-content:space-between}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="hero">
+  <div><h1>Glosbanken</h1><p>Välj din klass och vecka – eller gå tillbaka och repetera.</p></div>
+  <div class="badge" id="syncBadge">Google Sheets</div>
+</header>
+
+<nav class="tabs" id="classTabs"></nav>
+
+<section class="panel">
+  <div class="topline">
+    <div>
+      <h2 id="classTitle">7A</h2>
+      <div class="meta" id="wordCount">Laddar…</div>
+    </div>
+    <div class="tools">
+      <label class="week-picker" for="weekSelect">Vecka
+        <select id="weekSelect" aria-label="Välj vecka"></select>
+      </label>
+      <input id="searchInput" class="search" type="search" placeholder="Sök bland orden…">
+      <button class="secondary" id="refreshBtn">↻ Uppdatera ord</button>
+    </div>
+  </div>
+
+  <nav class="mode-tabs">
+    <button class="mode active" data-mode="list">Ordlista</button>
+    <button class="mode" data-mode="flash">Flashcards</button>
+    <button class="mode" data-mode="quiz">Träna</button>
+  </nav>
+
+  <div class="view active" id="listView"><div class="word-list" id="wordList"></div></div>
+
+  <div class="view" id="flashView">
+    <div class="flash-toolbar">
+      <div class="meta" id="flashProgress">0 / 0</div>
+      <div class="tools">
+        <button class="secondary" id="shuffleBtn">Blanda</button>
+        <button class="secondary" id="flipDirectionBtn">Svenska → engelska</button>
+      </div>
+    </div>
+    <div class="flashcard" id="flashcard" tabindex="0">
+      <div class="flash-label" id="flashLabel"></div>
+      <div class="flash-word" id="flashWord">Laddar…</div>
+      <div class="flash-hint" id="flashHint">Klicka på kortet för att vända</div>
+    </div>
+    <div class="flash-nav">
+      <button class="secondary" id="prevBtn">← Föregående</button>
+      <button class="primary" id="nextBtn">Nästa →</button>
+    </div>
+  </div>
+
+  <div class="view" id="quizView">
+    <div class="quiz-toolbar">
+      <div class="score" id="scoreText">Rätt: 0 / 0</div>
+      <div class="tools">
+        <button class="secondary" id="quizDirectionBtn">Svenska → engelska</button>
+        <button class="secondary" id="newRoundBtn">Ny omgång</button>
+      </div>
+    </div>
+    <div class="quiz-box">
+      <div class="quiz-direction" id="quizDirection">Översätt till engelska</div>
+      <div class="quiz-prompt" id="quizPrompt">—</div>
+      <input class="quiz-answer" id="quizAnswer" type="text" autocomplete="off" placeholder="Skriv ditt svar">
+      <div class="quiz-buttons">
+        <button class="primary" id="checkBtn">Kontrollera</button>
+        <button class="secondary" id="showAnswerBtn">Visa svar</button>
+      </div>
+      <div class="feedback" id="quizFeedback"></div>
+    </div>
+  </div>
+</section>
+
+<footer>Glosbanken · GitHub Pages + Google Sheets</footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const CLASSES=["7A","7D","8A","9B"];
+const SHEET_ID="19xGzZpRh5UQXmHuryDpAhH1hExZHMzR_";
+let data={"7A":[],"7D":[],"8A":[],"9B":[]};
+let currentClass="7A",currentMode="list";
+let currentWeekByClass={"7A":"","7D":"","8A":"","9B":""};
+let flashOrder=[],flashIndex=0,flashFlipped=false,flashSwedishFirst=true;
+let quizOrder=[],quizIndex=0,quizCorrect=0,quizAnswered=0,quizSwedishFirst=true;
+const $=id=>document.getElementById(id);
+
+function parseCSV(text){
+  const rows=[];let row=[],cell="",quoted=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(c==='"'){
+      if(quoted&&text[i+1]==='"'){cell+='"';i++}else quoted=!quoted;
+    }else if(c===','&&!quoted){row.push(cell);cell=""}
+    else if((c==='\n'||c==='\r')&&!quoted){
+      if(c==='\r'&&text[i+1]==='\n')i++;
+      row.push(cell);rows.push(row);row=[];cell="";
+    }else cell+=c;
+  }
+  if(cell.length||row.length){row.push(cell);rows.push(row)}
+  return rows;
+}
+function normalizeWeek(value){
+  const raw=String(value??"").trim();
+  if(!raw)return "";
+  if(/^vecka$/i.test(raw))return "";
+  const match=raw.match(/(?:vecka|v\.?\s*)?(\d{1,2})\s*$/i);
+  return match?String(Number(match[1])):raw;
+}
+function cleanRows(rows){
+  return rows.map(r=>({week:normalizeWeek(r[0]),sv:String(r[1]??"").trim(),en:String(r[2]??"").trim()}))
+    .filter(x=>x.week&&x.sv&&x.en);
+}
+function weeksForClass(cls=currentClass){
+  const seen=new Set(),weeks=[];
+  data[cls].forEach(w=>{if(!seen.has(w.week)){seen.add(w.week);weeks.push(w.week)}});
+  return weeks;
+}
+function ensureCurrentWeek(cls=currentClass){
+  const weeks=weeksForClass(cls);
+  if(!weeks.includes(currentWeekByClass[cls]))currentWeekByClass[cls]=weeks.at(-1)||"";
+}
+function activeWords(){
+  const week=currentWeekByClass[currentClass];
+  return data[currentClass].filter(w=>w.week===week);
+}
+async function fetchClass(cls){
+  const url=`https://docs.google.com/spreadsheets/d/${encodeURIComponent(SHEET_ID)}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(cls)}&_=${Date.now()}`;
+  const res=await fetch(url,{cache:"no-store"});
+  if(!res.ok)throw new Error(`Kunde inte läsa ${cls} (${res.status}).`);
+  const text=await res.text();
+  if(/<!doctype html|<html/i.test(text))throw new Error("Google returnerade en inloggnings- eller felsida. Kontrollera delningsinställningen.");
+  return cleanRows(parseCSV(text));
+}
+async function loadClass(cls=currentClass,showToast=false){
+  currentClass=cls;
+  renderTabs();$("classTitle").textContent=cls;$("wordCount").innerHTML='<span class="loading">Laddar <i class="dot"></i><i class="dot"></i><i class="dot"></i></span>';
+  $("syncBadge").textContent="Hämtar…";
+  try{
+    data[cls]=await fetchClass(cls);
+    ensureCurrentWeek(cls);
+    $("syncBadge").textContent="Synkroniserad";
+    resetFlash();resetQuiz();renderAll();
+    if(showToast)toast(`${cls} uppdaterad – ${data[cls].length} glosor för ${weeksForClass(cls).length} veckor.`);
+  }catch(err){
+    data[cls]=[];$("syncBadge").textContent="Anslutningsfel";
+    renderAll();
+    $("wordList").innerHTML=`<div class="errorbox">${escapeHTML(err.message)}<br><br>Försök uppdatera sidan. Om felet kvarstår, meddela din lärare.</div>`;
+    $("wordCount").textContent="Kunde inte hämta ord";
+    if(showToast)toast("Kunde inte hämta glosorna.");
+  }
+}
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+
+function renderTabs(){
+  const host=$("classTabs");host.innerHTML="";
+  CLASSES.forEach(cls=>{const b=document.createElement("button");b.className="tab"+(cls===currentClass?" active":"");b.textContent=cls;
+    b.onclick=()=>loadClass(cls);host.appendChild(b)})
+}
+function renderModes(){
+  document.querySelectorAll(".mode").forEach(b=>b.classList.toggle("active",b.dataset.mode===currentMode));
+  ["list","flash","quiz"].forEach(m=>$(m+"View").classList.toggle("active",m===currentMode))
+}
+function renderWeekPicker(){
+  const select=$("weekSelect"),weeks=weeksForClass();
+  ensureCurrentWeek();select.innerHTML="";
+  if(!weeks.length){
+    const option=document.createElement("option");option.textContent="Inga veckor";option.value="";select.appendChild(option);select.disabled=true;return;
+  }
+  select.disabled=false;
+  weeks.slice().reverse().forEach(week=>{const option=document.createElement("option");option.value=week;option.textContent=`Vecka ${week}`;option.selected=week===currentWeekByClass[currentClass];select.appendChild(option)});
+}
+function renderList(){
+  const q=$("searchInput").value.trim().toLocaleLowerCase("sv"),host=$("wordList");host.innerHTML="";
+  const words=activeWords();
+  const list=words.filter(w=>!q||w.sv.toLocaleLowerCase("sv").includes(q)||w.en.toLocaleLowerCase("en").includes(q));
+  if(!list.length){host.innerHTML=`<div class="empty">${words.length?"Inga ord matchar sökningen.":data[currentClass].length?"Det finns inga glosor för den valda veckan.":"Det finns inga glosor i den här klassens flik ännu."}</div>`;return}
+  list.forEach(w=>{const r=document.createElement("div");r.className="word-row";const a=document.createElement("strong"),b=document.createElement("span");a.textContent=w.sv;b.textContent=w.en;r.append(a,b);host.appendChild(r)})
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function resetFlash(){flashOrder=activeWords().map((_,i)=>i);flashIndex=0;flashFlipped=false}
+function renderFlash(){
+  const list=activeWords();if(flashOrder.length!==list.length)resetFlash();
+  $("flipDirectionBtn").textContent=flashSwedishFirst?"Svenska → engelska":"Engelska → svenska";
+  if(!list.length){$("flashProgress").textContent="0 / 0";$("flashLabel").textContent="";$("flashWord").textContent="Inga ord ännu";$("flashHint").textContent="";return}
+  const w=list[flashOrder[flashIndex]],front=flashSwedishFirst?"sv":"en",back=flashSwedishFirst?"en":"sv";
+  $("flashProgress").textContent=`${flashIndex+1} / ${flashOrder.length}`;
+  $("flashLabel").textContent=flashFlipped?(flashSwedishFirst?"Engelska":"Svenska"):(flashSwedishFirst?"Svenska":"Engelska");
+  $("flashWord").textContent=flashFlipped?w[back]:w[front];$("flashHint").textContent="Klicka på kortet för att vända"
+}
+function normalize(s){return String(s).trim().toLocaleLowerCase().replace(/\s+/g," ")}
+function resetQuiz(){quizOrder=shuffle(activeWords().map((_,i)=>i));quizIndex=0;quizCorrect=0;quizAnswered=0;$("quizAnswer").value="";$("quizFeedback").textContent="";$("quizFeedback").className="feedback"}
+function quizWord(){const list=activeWords();return list.length&&quizOrder.length?list[quizOrder[quizIndex%quizOrder.length]]:null}
+function renderQuiz(){
+  const w=quizWord();$("scoreText").textContent=`Rätt: ${quizCorrect} / ${quizAnswered}`;
+  $("quizDirectionBtn").textContent=quizSwedishFirst?"Svenska → engelska":"Engelska → svenska";
+  $("quizDirection").textContent=quizSwedishFirst?"Översätt till engelska":"Översätt till svenska";
+  $("quizPrompt").textContent=w?(quizSwedishFirst?w.sv:w.en):"Inga ord ännu";
+  [$("quizAnswer"),$("checkBtn"),$("showAnswerBtn")].forEach(x=>x.disabled=!w)
+}
+function nextQuiz(){if(!quizOrder.length)return;quizIndex=(quizIndex+1)%quizOrder.length;$("quizAnswer").value="";$("quizFeedback").textContent="";$("quizFeedback").className="feedback";renderQuiz();$("quizAnswer").focus()}
+function checkQuiz(){
+  const w=quizWord();if(!w||!$("quizAnswer").value.trim())return;
+  const expected=quizSwedishFirst?w.en:w.sv;quizAnswered++;
+  if(normalize($("quizAnswer").value)===normalize(expected)){quizCorrect++;$("quizFeedback").textContent="Rätt! ✓";$("quizFeedback").className="feedback good";renderQuiz();setTimeout(nextQuiz,650)}
+  else{$("quizFeedback").textContent=`Inte riktigt. Rätt svar: ${expected}`;$("quizFeedback").className="feedback bad";renderQuiz()}
+}
+function renderAll(){
+  ensureCurrentWeek();renderTabs();renderModes();renderWeekPicker();$("classTitle").textContent=currentClass;
+  const week=currentWeekByClass[currentClass],count=activeWords().length;
+  $("wordCount").textContent=week?`${count} ord · vecka ${week}`:`${data[currentClass].length} ord`;
+  renderList();renderFlash();renderQuiz()
+}
+function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove("show"),3200)}
+
+document.querySelectorAll(".mode").forEach(b=>b.onclick=()=>{currentMode=b.dataset.mode;renderModes();if(currentMode==="quiz")$("quizAnswer").focus()});
+$("searchInput").oninput=renderList;$("refreshBtn").onclick=()=>loadClass(currentClass,true);
+$("weekSelect").onchange=()=>{currentWeekByClass[currentClass]=$("weekSelect").value;$("searchInput").value="";resetFlash();resetQuiz();renderAll()};
+$("flashcard").onclick=()=>{if(data[currentClass].length){flashFlipped=!flashFlipped;renderFlash()}};
+$("flashcard").onkeydown=e=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();$("flashcard").click()}};
+$("prevBtn").onclick=()=>{if(flashOrder.length){flashIndex=(flashIndex-1+flashOrder.length)%flashOrder.length;flashFlipped=false;renderFlash()}};
+$("nextBtn").onclick=()=>{if(flashOrder.length){flashIndex=(flashIndex+1)%flashOrder.length;flashFlipped=false;renderFlash()}};
+$("shuffleBtn").onclick=()=>{shuffle(flashOrder);flashIndex=0;flashFlipped=false;renderFlash()};
+$("flipDirectionBtn").onclick=()=>{flashSwedishFirst=!flashSwedishFirst;flashFlipped=false;renderFlash()};
+$("quizDirectionBtn").onclick=()=>{quizSwedishFirst=!quizSwedishFirst;resetQuiz();renderQuiz()};
+$("newRoundBtn").onclick=()=>{resetQuiz();renderQuiz()};$("checkBtn").onclick=checkQuiz;
+$("showAnswerBtn").onclick=()=>{const w=quizWord();if(w){$("quizFeedback").textContent=`Rätt svar: ${quizSwedishFirst?w.en:w.sv}`;$("quizFeedback").className="feedback"}};
+$("quizAnswer").onkeydown=e=>{if(e.key==="Enter")checkQuiz()};
+
+renderAll();
+loadClass(currentClass);
+</script>
+</body>
+</html>
